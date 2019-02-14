@@ -17,10 +17,12 @@ def main(argv):
                         help='File containing score JSON')
     parser.add_argument('--ontology', dest='ontology', action='store', metavar='JSON_FILE', required=True,
                         help='JSON Ontology file')
+    parser.add_argument('--config', dest='config', action='store', required=True, metavar='TRUE/FALSE',
+                        help='The path of the config folder containing the .flist files')
 
     args = parser.parse_args()
 
-    sessions = dataset_walker(args.dataset, dataroot=args.dataroot, labels=False)
+    sessions = dataset_walker(args.dataset, dataroot=args.dataroot, labels=False, config_folder=args.config)
     tracker_output = json.load(open(args.scorefile))
     ontology = json.load(open(args.ontology))
 

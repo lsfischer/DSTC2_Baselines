@@ -29,14 +29,16 @@ def main(argv):
                         help='JSON Ontology file')
     parser.add_argument('--rocdump', dest='rocdump', action='store', metavar='FILE_STEM',
                         help='If present, use this file stem to write out ROC plot data: filestem.<schedule>.<slot>.<type>.csv, where type is either roc (which contains the ROC curve coordinates) or scores (which contains the raw scores used to compute the ROC curves).')
+    parser.add_argument('--config', dest='config', action='store', required=True, metavar='TRUE/FALSE',
+                        help='The path of the config folder containing the .flist files')
 
     args = parser.parse_args()
 
-    sessions = dataset_walker(args.dataset, dataroot=args.dataroot, labels=True)
+    sessions = dataset_walker(args.dataset, dataroot=args.dataroot, labels=True, config_folder=args.config)
     tracker_output = json.load(open(args.scorefile))
     ontology = json.load(open(args.ontology))
 
-    slots_informable = ontology["informable"].keys()
+    slots_informable = list(ontology["informable"].keys())
     slots_requestable = ontology["requestable"]
 
     csvfile = open(args.csv, 'w')
@@ -225,10 +227,9 @@ def main(argv):
             raise
         except:
             traceback.print_exc(file=sys.stdout)
-            print
-            "While scoring " + str(session_id)
+            print("While scoring " + str(session_id))
     # output to csv
-    print >> csvfile, ("state_component, stat, schedule, label_scheme, N, result")
+    print(csvfile, ("state_component, stat, schedule, label_scheme, N, result"), file=sys.stderr)
 
     for stat in stats:
         component, (schedule, label_scheme), stat_class = stat
@@ -238,8 +239,8 @@ def main(argv):
                 result = "-"
             else:
                 result = "%.7f" % result
-            print >> csvfile, ("%s, %s, %i, %s, %i, %s" % (
-                ".".join(component), stat_subname, schedule, label_scheme, N, result))
+            print(csvfile, ("%s, %s, %i, %s, %i, %s" % (
+                ".".join(component), stat_subname, schedule, label_scheme, N, result)), file=sys.stderr)
         if isinstance(stat_class, Stat_ROC) and (args.rocdump):
             rocfile = args.rocdump + '.schedule' + str(schedule) + str(label_scheme) + '.' + (
                 ".".join(component)) + '.roc.csv'
@@ -248,11 +249,11 @@ def main(argv):
             stat_class.DumpROCToFile(rocfile)
             stat_class.DumpScoresToFile(scoresfile)
 
-    print >> csvfile, 'basic,total_wall_time,,,,%s' % (tracker_output['wall-time'])
-    print >> csvfile, 'basic,sessions,,,,%s' % (len(sessions))
-    print >> csvfile, 'basic,turns,,,,%i' % (int(turn_counter))
-    print >> csvfile, 'basic,wall_time_per_turn,,,,%s' % (tracker_output['wall-time'] / turn_counter)
-    print >> csvfile, 'basic,dataset,,,,%s' % (tracker_output['dataset'])
+    print(csvfile, 'basic,total_wall_time,,,,%s' % (tracker_output['wall-time']), file=sys.stderr)
+    print(csvfile, 'basic,sessions,,,,%s' % (len(sessions)), file=sys.stderr)
+    print(csvfile, 'basic,turns,,,,%i' % (int(turn_counter)), file=sys.stderr)
+    print(csvfile, 'basic,wall_time_per_turn,,,,%s' % (tracker_output['wall-time'] / turn_counter), file=sys.stderr)
+    print(csvfile, 'basic,dataset,,,,%s' % (tracker_output['dataset']), file=sys.stderr)
 
     csvfile.close()
 
@@ -268,12 +269,12 @@ def normalise_dist(dist, this_id=None):
 
     for i in range(len(out)):
         if out[i][1] < 0.0:
-            print >> sys.stderr, 'WARNING: Score is less than 0.0, changing to 0.0', context_string
+            print(sys.stderr, 'WARNING: Score is less than 0.0, changing to 0.0', context_string, file=sys.stderr)
 
     total_p = sum([x[1] for x in out])
     if total_p > 1.0:
         if abs(total_p - 1.0) > EPS:
-            print >> sys.stderr, 'WARNING: scores sum to more than 1, renormalising', context_string
+            print(sys.stderr, 'WARNING: scores sum to more than 1, renormalising', context_string, file=sys.stderr)
         out = [(x[0], x[1] / total_p) for x in out]
         total_p = 1.0
 
@@ -595,12 +596,11 @@ class Stat_ROC(Stat):
         pass
 
     def DumpScoresToFile(self, filename):
-        print
-        "creating", filename
+        print("creating", filename)
         f = open(filename, 'w')
-        print >> f, 'label,score'
+        print(f, 'label,score', file=sys.stderr)
         for label, score in self.data:
-            print >> f, '%s,%s' % (label, score)
+            print(f, '%s,%s' % (label, score), file=sys.stderr)
         f.close()
 
 

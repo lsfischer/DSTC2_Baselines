@@ -2,7 +2,7 @@ import os, json, re
 
 
 class dataset_walker(object):
-    def __init__(self, dataset, labels=False, dataroot=None):
+    def __init__(self, dataset, labels=False, dataroot=None, config_folder=None):
         if "[" in dataset:
             self.datasets = json.loads(dataset)
         elif type(dataset) == type([]):
@@ -11,8 +11,9 @@ class dataset_walker(object):
             self.datasets = [dataset]
             self.dataset = dataset
         self.install_root = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-        self.dataset_session_lists = [os.path.join(self.install_root, 'config', dataset + '.flist') for dataset in
-                                      self.datasets]
+        self.dataset_session_lists = [config_folder + '/' + dataset + '.flist' for dataset in self.datasets]
+        # self.dataset_session_lists = [os.path.join(self.install_root, 'config', dataset + '.flist') for dataset in
+        #                               self.datasets]
 
         self.labels = labels
         if (dataroot == None):

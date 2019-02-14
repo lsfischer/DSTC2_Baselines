@@ -66,8 +66,8 @@ def is_informable(slot):
 
 def get_slot_value(dact):
     a = dact["act"]
-    s = None;
-    v = None;
+    s = None
+    v = None
     if dact["slots"]:
         if len(dact["slots"][0]) >= 1:
             s = dact["slots"][0][0]
@@ -550,10 +550,12 @@ def main():
                         help='File to write with tracker output')
     parser.add_argument('--original', dest='original', action='store', required=False, metavar='TRUE/FALSE',
                         help='Use the original version presented in (Wang & Lemon, SigDial 2013)')
+    parser.add_argument('--config', dest='config', action='store', required=True, metavar='TRUE/FALSE',
+                        help='The path of the config folder containing the .flist files')
 
     args = parser.parse_args()
 
-    dataset = dataset_walker.dataset_walker(args.dataset, dataroot=args.dataroot)
+    dataset = dataset_walker.dataset_walker(args.dataset, dataroot=args.dataroot, config_folder=args.config)
 
     original = False
     if args.original and args.original.lower() == "true":

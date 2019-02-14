@@ -303,8 +303,12 @@ def main():
                         help='File to write with tracker output')
     parser.add_argument('--focus', dest='focus', action='store', nargs='?', default="False", const="True",
                         help='Use focus node tracker')
+    parser.add_argument('--config', dest='config', action='store', required=True, metavar='TRUE/FALSE',
+                        help='The path of the config folder containing the .flist files')
+
     args = parser.parse_args()
-    dataset = dataset_walker.dataset_walker(args.dataset, dataroot=args.dataroot)
+
+    dataset = dataset_walker.dataset_walker(args.dataset, dataroot=args.dataroot, config_folder=args.config)
     track_file = open(args.trackfile, "wb")
     track = {"sessions": []}
     track["dataset"] = args.dataset
