@@ -105,7 +105,7 @@ def main(argv):
                 tracker_goal_labels = _tracker_turn["goal-labels"]
                 for slot in slots_informable:
                     if slot in tracker_goal_labels:
-                        tracker_goal_labels[slot] = normalise_dist(tracker_goal_labels[slot].items(),
+                        tracker_goal_labels[slot] = normalise_dist(list(tracker_goal_labels[slot].items()),
                                                                    (session_id, turn_num, "goal." + slot))
                     else:
                         tracker_goal_labels[slot] = [(None, 1.0)]
@@ -139,7 +139,7 @@ def main(argv):
                     dist = [(True, tracker_requested_slots[slot]), (False, 1.0 - tracker_requested_slots[slot])]
                     tracker_requested_slots[slot] = normalise_dist(dist, (session_id, turn_num, "requested." + slot))
 
-                tracker_method_label = normalise_dist(_tracker_turn["method-label"].items(),
+                tracker_method_label = normalise_dist(list(_tracker_turn["method-label"].items()),
                                                       (session_id, turn_num, "method"))
 
                 # for method schedule 2, work out whether any slu-hyp has been given
@@ -570,7 +570,7 @@ class Stat_ROC(Stat):
         tas = [cumsum[i] for i in indices]
         thresholds = [self.data[i][1] for i in indices]
         self.roc_curve = zip(thresholds, tas, fas, trs, frs)
-        self.roc_curve.reverse()  # so thresholds are increasing
+        self.roc_curve = list(self.roc_curve)[::-1]  # so thresholds are increasing
 
     def CA_at_FA(self, fa_thresh, version=1):
         assert (version in [1, 2]), 'Dont know version %s' % (version)
