@@ -229,7 +229,7 @@ def main(argv):
             traceback.print_exc(file=sys.stdout)
             print("While scoring " + str(session_id))
     # output to csv
-    print(csvfile, ("state_component, stat, schedule, label_scheme, N, result"), file=sys.stderr)
+    csvfile.write("state_component, stat, schedule, label_scheme, N, result")
 
     for stat in stats:
         component, (schedule, label_scheme), stat_class = stat
@@ -239,21 +239,23 @@ def main(argv):
                 result = "-"
             else:
                 result = "%.7f" % result
-            print(csvfile, ("%s, %s, %i, %s, %i, %s" % (
-                ".".join(component), stat_subname, schedule, label_scheme, N, result)), file=sys.stderr)
+                csvfile.write(
+                    "%s, %s, %i, %s, %i, %s" % (".".join(component), stat_subname, schedule, label_scheme, N, result))
+
         if isinstance(stat_class, Stat_ROC) and (args.rocdump):
             rocfile = args.rocdump + '.schedule' + str(schedule) + str(label_scheme) + '.' + (
                 ".".join(component)) + '.roc.csv'
+
             scoresfile = args.rocdump + '.schedule' + str(schedule) + str(label_scheme) + '.' + (
                 ".".join(component)) + '.scores.csv'
             stat_class.DumpROCToFile(rocfile)
             stat_class.DumpScoresToFile(scoresfile)
 
-    print(csvfile, 'basic,total_wall_time,,,,%s' % (tracker_output['wall-time']), file=sys.stderr)
-    print(csvfile, 'basic,sessions,,,,%s' % (len(sessions)), file=sys.stderr)
-    print(csvfile, 'basic,turns,,,,%i' % (int(turn_counter)), file=sys.stderr)
-    print(csvfile, 'basic,wall_time_per_turn,,,,%s' % (tracker_output['wall-time'] / turn_counter), file=sys.stderr)
-    print(csvfile, 'basic,dataset,,,,%s' % (tracker_output['dataset']), file=sys.stderr)
+    csvfile.write('basic,total_wall_time,,,,%s' % (tracker_output['wall-time']))
+    csvfile.write('basic,sessions,,,,%s' % (len(sessions)))
+    csvfile.write('basic,turns,,,,%i' % (int(turn_counter)))
+    csvfile.write('basic,wall_time_per_turn,,,,%s' % (tracker_output['wall-time'] / turn_counter))
+    csvfile.write('basic,dataset,,,,%s' % (tracker_output['dataset']))
 
     csvfile.close()
 
@@ -269,12 +271,12 @@ def normalise_dist(dist, this_id=None):
 
     for i in range(len(out)):
         if out[i][1] < 0.0:
-            print(sys.stderr, 'WARNING: Score is less than 0.0, changing to 0.0', context_string, file=sys.stderr)
+            print('WARNING: Score is less than 0.0, changing to 0.0', context_string, file=sys.stderr)
 
     total_p = sum([x[1] for x in out])
     if total_p > 1.0:
         if abs(total_p - 1.0) > EPS:
-            print(sys.stderr, 'WARNING: scores sum to more than 1, renormalising', context_string, file=sys.stderr)
+            print('WARNING: scores sum to more than 1, renormalising', context_string, file=sys.stderr)
         out = [(x[0], x[1] / total_p) for x in out]
         total_p = 1.0
 
@@ -598,9 +600,9 @@ class Stat_ROC(Stat):
     def DumpScoresToFile(self, filename):
         print("creating", filename)
         f = open(filename, 'w')
-        print(f, 'label,score', file=sys.stderr)
+        f.write('label,score')
         for label, score in self.data:
-            print(f, '%s,%s' % (label, score), file=sys.stderr)
+            f.write('%s,%s' % (label, score))
         f.close()
 
 
