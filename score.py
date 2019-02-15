@@ -229,7 +229,7 @@ def main(argv):
             traceback.print_exc(file=sys.stdout)
             print("While scoring " + str(session_id))
     # output to csv
-    csvfile.write("state_component, stat, schedule, label_scheme, N, result")
+    csvfile.write("state_component, stat, schedule, label_scheme, N, result\n")
 
     for stat in stats:
         component, (schedule, label_scheme), stat_class = stat
@@ -240,7 +240,7 @@ def main(argv):
             else:
                 result = "%.7f" % result
                 csvfile.write(
-                    "%s, %s, %i, %s, %i, %s" % (".".join(component), stat_subname, schedule, label_scheme, N, result))
+                    "%s, %s, %i, %s, %i, %s\n" % (".".join(component), stat_subname, schedule, label_scheme, N, result))
 
         if isinstance(stat_class, Stat_ROC) and (args.rocdump):
             rocfile = args.rocdump + '.schedule' + str(schedule) + str(label_scheme) + '.' + (
@@ -251,11 +251,11 @@ def main(argv):
             stat_class.DumpROCToFile(rocfile)
             stat_class.DumpScoresToFile(scoresfile)
 
-    csvfile.write('basic,total_wall_time,,,,%s' % (tracker_output['wall-time']))
-    csvfile.write('basic,sessions,,,,%s' % (len(sessions)))
-    csvfile.write('basic,turns,,,,%i' % (int(turn_counter)))
-    csvfile.write('basic,wall_time_per_turn,,,,%s' % (tracker_output['wall-time'] / turn_counter))
-    csvfile.write('basic,dataset,,,,%s' % (tracker_output['dataset']))
+    csvfile.write('basic,total_wall_time,,,,%s\n' % (tracker_output['wall-time']))
+    csvfile.write('basic,sessions,,,,%s\n' % (len(sessions)))
+    csvfile.write('basic,turns,,,,%i\n' % (int(turn_counter)))
+    csvfile.write('basic,wall_time_per_turn,,,,%s\n' % (tracker_output['wall-time'] / turn_counter))
+    csvfile.write('basic,dataset,,,,%s\n' % (tracker_output['dataset']))
 
     csvfile.close()
 
@@ -600,9 +600,9 @@ class Stat_ROC(Stat):
     def DumpScoresToFile(self, filename):
         print("creating", filename)
         f = open(filename, 'w')
-        f.write('label,score')
+        f.write('label,score\n')
         for label, score in self.data:
-            f.write('%s,%s' % (label, score))
+            f.write('%s,%s\n' % (label, score))
         f.close()
 
 
