@@ -355,7 +355,7 @@ def main():
     dataset = dataset_walker.dataset_walker(args.dataset, dataroot=args.dataroot, config_folder=args.config)
 
     # Opens track file
-    track_file = open(args.trackfile, "wb")
+    track_file = open(args.trackfile, "w")
 
     track = {"sessions": [], "dataset": args.dataset}
 
@@ -397,7 +397,7 @@ def main():
 
     track["wall-time"] = elapsed_time
 
-    # json.dump(track, track_file, indent=4)
+    json.dump(track, track_file, indent=4)
 
 
 if __name__ == '__main__':
