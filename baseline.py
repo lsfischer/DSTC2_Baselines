@@ -1,22 +1,28 @@
 import argparse, json, time, copy
 from collections import defaultdict
-
+from custom_tracker import CustomTracker
 import dataset_walker
 
 
 def labels(user_act, mact):
     # get context for "this" in inform(=dontcare)
     # get context for affirm and negate
+
     this_slot = None
 
     confirm_slots = {"explicit": [], "implicit": []}
+
     for act in mact:
+
         if act["act"] == "request":
             this_slot = act["slots"][0][1]
+
         elif act["act"] == "select":
             this_slot = act["slots"][0][0]
+
         elif act["act"] == "impl-conf":
             confirm_slots["implicit"] += act["slots"]
+
         elif act["act"] == "expl-conf":
             confirm_slots["explicit"] += act["slots"]
             this_slot = act["slots"][0][0]
@@ -24,10 +30,13 @@ def labels(user_act, mact):
     # goal_labels
     informed_goals = {}
     denied_goals = defaultdict(list)
+
     for act in user_act:
+
         act_slots = act["slots"]
         slot = None
         value = None
+
         if len(act_slots) > 0:
             assert len(act_slots) == 1
 
@@ -35,12 +44,13 @@ def labels(user_act, mact):
                 slot = this_slot
             else:
                 slot = act_slots[0][0]
+
             value = act_slots[0][1]
 
-        if act["act"] == "inform" and slot != None:
-            informed_goals[slot] = (value)
+        if act["act"] == "inform" and slot is not None:
+            informed_goals[slot] = value
 
-        elif act["act"] == "deny" and slot != None:
+        elif act["act"] == "deny" and slot is not None:
             denied_goals[slot].append(value)
 
         elif act["act"] == "negate":
@@ -87,46 +97,68 @@ def labels(user_act, mact):
 
 
 def Uacts(turn):
-    # return merged slu-hyps, replacing "this" with the correct slot
+    """ return merged slu-hyps, replacing "this" with the correct slot """
+
     mact = []
+
     if "dialog-acts" in turn["output"]:
         mact = turn["output"]["dialog-acts"]
+
     this_slot = None
+
     for act in mact:
+        # get the requested slot by the user and save it in this_slot
         if act["act"] == "request":
             this_slot = act["slots"][0][1]
+
     this_output = []
+
     for slu_hyp in turn['input']["live"]['slu-hyps']:
         score = slu_hyp['score']
         this_slu_hyp = slu_hyp['slu-hyp']
         these_hyps = []
+
         for hyp in this_slu_hyp:
+
             for i in range(len(hyp["slots"])):
                 slot, _ = hyp["slots"][i]
+
                 if slot == "this":
                     hyp["slots"][i][0] = this_slot
+
             these_hyps.append(hyp)
+
         this_output.append((score, these_hyps))
+
     this_output.sort(key=lambda x: x[0], reverse=True)
+
     return this_output
 
 
 class Tracker(object):
+
     def __init__(self):
         self.reset()
 
     def addTurn(self, turn):
+
+        """ Adds a turn to the tracker """
+
         hyps = copy.deepcopy(self.hyps)
+
         if "dialog-acts" in turn["output"]:
             mact = turn["output"]["dialog-acts"]
         else:
             mact = []
+
         # clear requested-slots that have been informed
         for act in mact:
             if act["act"] == "inform":
                 for slot, value in act["slots"]:
                     if slot in hyps["requested-slots"]:
                         hyps["requested-slots"][slot] = 0.0
+
+        # Gets a list of tuples containing all slu hypothesis for that turn and the score for how probable they are
         slu_hyps = Uacts(turn)
 
         requested_slot_stats = defaultdict(float)
@@ -135,15 +167,19 @@ class Tracker(object):
         prev_method = "none"
 
         if len(hyps["method-label"].keys()) > 0:
-            prev_method = hyps["method-label"].keys()[0]
+            prev_method = list(hyps["method-label"].keys())[0]
+
         for score, uact in slu_hyps:
+
             informed_goals, denied_goals, requested, method = labels(uact, mact)
-            # requested
+
+            # requesteds
             for slot in requested:
                 requested_slot_stats[slot] += score
             if method == "none":
                 method = prev_method
             method_stats[method] += score
+
             # goal_labels
             for slot in informed_goals:
                 value = informed_goals[slot]
@@ -153,7 +189,7 @@ class Tracker(object):
         for slot in goal_stats:
             curr_score = 0.0
             if (slot in hyps["goal-labels"]):
-                curr_score = hyps["goal-labels"][slot].values()[0]
+                curr_score = list(hyps["goal-labels"][slot].values())[0]
             for value in goal_stats[slot]:
                 score = goal_stats[slot][value]
                 if score >= curr_score:
@@ -191,6 +227,8 @@ class Tracker(object):
         return self.hyps
 
     def reset(self):
+        """Resets hypothesis dictionary to empty value"""
+
         self.hyps = {"goal-labels": {}, "goal-labels-joint": [], "requested-slots": {}, "method-label": {}}
 
 
@@ -305,34 +343,61 @@ def main():
                         help='Use focus node tracker')
     parser.add_argument('--config', dest='config', action='store', required=True, metavar='TRUE/FALSE',
                         help='The path of the config folder containing the .flist files')
+    parser.add_argument('--customtracker', dest='customtracker', action='store', nargs='?', default="True",
+                        const="True",
+                        help='Use custom tracker')
+    parser.add_argument('--ontology', dest='ontology', action='store', metavar='JSON_FILE', required=True,
+                        help='The ontology to use')
 
     args = parser.parse_args()
 
+    # Opens data set file and stores it in dataset object
     dataset = dataset_walker.dataset_walker(args.dataset, dataroot=args.dataroot, config_folder=args.config)
+
+    # Opens track file
     track_file = open(args.trackfile, "wb")
-    track = {"sessions": []}
-    track["dataset"] = args.dataset
+
+    track = {"sessions": [], "dataset": args.dataset}
+
     start_time = time.time()
 
-    if args.focus.lower() == "true":
-        tracker = FocusTracker()
-    elif args.focus.lower() == "false":
-        tracker = Tracker()
+    # Choosing what kind of tracker to have
+    # if args.focus.lower() == "true":
+    #     tracker = FocusTracker()
+    #
+    # elif args.focus.lower() == "false":
+    #     tracker = Tracker()
+    #
+    # else:
+    #     raise RuntimeError('Dont recognize focus=%s (must be True or False)' % (args.focus))
+
+    if args.customtracker.lower() == "true":
+        ontology = json.load(open(args.ontology))
+        tracker = CustomTracker(ontology)
     else:
-        raise RuntimeError('Dont recognize focus=%s (must be True or False)' % (args.focus))
+        tracker = Tracker()
+
+    # Iterates over every call in the dataset
     for call in dataset:
+
         this_session = {"session-id": call.log["session-id"], "turns": []}
         tracker.reset()
+
+        # Iterates over every turn in a call
         for turn, _ in call:
+            # Adds the turn to the tracker
             tracker_turn = tracker.addTurn(turn)
+
             this_session["turns"].append(tracker_turn)
 
         track["sessions"].append(this_session)
+
     end_time = time.time()
     elapsed_time = end_time - start_time
+
     track["wall-time"] = elapsed_time
 
-    json.dump(track, track_file, indent=4)
+    # json.dump(track, track_file, indent=4)
 
 
 if __name__ == '__main__':

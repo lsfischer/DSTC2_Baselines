@@ -1,7 +1,12 @@
-import argparse, json, time, copy, math
-import dataset_walker
-from collections import namedtuple
+import argparse
+import copy
+import json
+import math
+import time
 from argparse import RawTextHelpFormatter
+from collections import namedtuple
+
+import dataset_walker
 
 Ontology = {}
 SLU_Hypo = namedtuple("SLU_Hypo", ["act", "slot", "value"])
@@ -419,6 +424,7 @@ def get_joint_hyps(slot_hyps, blocked_joint):
 
 
 class HWU_Tracker(object):
+
     def __init__(self):
         self.reset()
 
@@ -564,8 +570,7 @@ def main():
     load_ontology(args.ontology)
 
     track_file = open(args.trackfile, "wb")
-    track = {"sessions": []}
-    track["dataset"] = args.dataset
+    track = {"sessions": [], "dataset": args.dataset}
     start_time = time.time()
     tracker = HWU_Tracker()
 

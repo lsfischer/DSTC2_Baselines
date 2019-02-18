@@ -2,6 +2,7 @@ import os, json, re
 
 
 class dataset_walker(object):
+
     def __init__(self, dataset, labels=False, dataroot=None, config_folder=None):
         if "[" in dataset:
             self.datasets = json.loads(dataset)
@@ -55,6 +56,7 @@ class dataset_walker(object):
 
 
 class Call(object):
+    
     def __init__(self, applog_filename, labels_filename):
         self.applog_filename = applog_filename
         self.labels_filename = labels_filename

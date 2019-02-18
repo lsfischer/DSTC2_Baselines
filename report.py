@@ -55,7 +55,7 @@ def main(argv):
         print(state_component.center(50))
         evaluation_schemes = [key for key in tables[state_component].keys() if len(tables[state_component][key]) > 0]
         evaluation_schemes.sort()
-        stats = tables[state_component][evaluation_schemes[0]].keys()
+        stats = list(tables[state_component][evaluation_schemes[0]].keys())
         stats.sort()
         print_row([''] + evaluation_schemes, header=True)
         for stat in stats:
