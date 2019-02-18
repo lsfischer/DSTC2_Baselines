@@ -1,6 +1,7 @@
 import argparse, json, time, copy
 from collections import defaultdict
 from custom_tracker import CustomTracker
+from bert_tracker import BertTracker
 import dataset_walker
 
 
@@ -371,11 +372,14 @@ def main():
     # else:
     #     raise RuntimeError('Dont recognize focus=%s (must be True or False)' % (args.focus))
 
-    if args.customtracker.lower() == "true":
-        ontology = json.load(open(args.ontology))
-        tracker = CustomTracker(ontology)
-    else:
-        tracker = Tracker()
+    # if args.customtracker.lower() == "true":
+    #     ontology = json.load(open(args.ontology))
+    #     tracker = CustomTracker(ontology)
+    # else:
+    #     tracker = Tracker()
+
+    ontology = json.load(open(args.ontology))
+    tracker = BertTracker(ontology)
 
     # Iterates over every call in the dataset
     for call in dataset:

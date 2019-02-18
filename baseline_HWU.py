@@ -569,7 +569,7 @@ def main():
 
     load_ontology(args.ontology)
 
-    track_file = open(args.trackfile, "wb")
+    track_file = open(args.trackfile, "w")
     track = {"sessions": [], "dataset": args.dataset}
     start_time = time.time()
     tracker = HWU_Tracker()
