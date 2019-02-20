@@ -26,14 +26,50 @@ class BertTracker:
         hyps = copy.deepcopy(self.hyps)
 
         best_asr_hyp = turn['input']["live"]['asr-hyps'][0]["asr-hyp"]
-        encoded_asr_hyp = BertTracker.bc.encode([best_asr_hyp])
 
-        slot_index = np.argmax(cosine_similarity(encoded_asr_hyp, self.encoded_kb))
+        if best_asr_hyp:
+            encoded_asr_hyp = BertTracker.bc.encode([best_asr_hyp])
 
-        possible_slots = self.knowledge_base[slot_index]
-        print("Utterance: {}\nSlots: {}\n".format(best_asr_hyp, possible_slots))
+            cosine_sim_arr = cosine_similarity(encoded_asr_hyp, self.encoded_kb)
+            slot_index: int = np.argmax(cosine_sim_arr)
 
-        return "N/A"
+            if cosine_sim_arr[0][
+                slot_index] >= 0.80:  # if cosine sim between utterance and kb is bellow 0.75 it's probably irrelevant
+
+                possible_slots = self.knowledge_base[slot_index]
+
+                food, area, price = possible_slots.split(',')
+
+                if food:
+                    hyps["goal-labels"]["food"] = {
+                        food: 1.0
+                    }
+
+                if area:
+                    hyps["goal-labels"]["area"] = {
+                        area: 1.0
+                    }
+
+                if price:
+                    hyps["goal-labels"]["pricerange"] = {
+                        price: 1.0
+                    }
+
+                informed_slots = list(hyps["goal-labels"].keys())
+                for inf_slot in informed_slots:
+                    if len(hyps["goal-labels-joint"]) > 0:
+                        hyps["goal-labels-joint"][0]["slots"][inf_slot] = list(hyps["goal-labels"][inf_slot].keys())[0]
+                    else:
+                        obj = {
+                            "slots": {
+                                inf_slot: list(hyps["goal-labels"][inf_slot].keys())[0]
+                            },
+                            "score": 1.0
+                        }
+                        hyps["goal-labels-joint"].append(obj)
+
+        self.hyps = hyps
+        return self.hyps
 
     def encode_ontology(self):
         """Encodes the ontology JSON using BERT"""

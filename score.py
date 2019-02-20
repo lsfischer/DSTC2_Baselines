@@ -45,7 +45,7 @@ def main(argv):
 
     # what stats are there?
     stats = []
-    stat_classes = [Stat_Accuracy, Stat_Probs, Stat_MRR, Stat_Updates, Stat_ROC]
+    stat_classes = [Stat_Accuracy]
 
     for schedule in SCHEDULES:
         for label_scheme in LABEL_SCHEMES:
