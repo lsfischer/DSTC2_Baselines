@@ -90,4 +90,6 @@ class BertTracker:
                          [",," + price for price in pricerange_options] + \
                          food_area + food_price + area_price + food_area_price
 
+        ["mexican", "south", "cheap", "mexican south"]
+
         return knowledge_base, BertTracker.bc.encode(knowledge_base)
