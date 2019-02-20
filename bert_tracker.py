@@ -4,6 +4,9 @@ from bert_serving.client import BertClient
 from sklearn.metrics.pairwise import cosine_similarity
 
 
+# First iteration is to simply cosine similarity user uterrances with a updated knowledge base
+# Second iteration is to try and create a BERT classifier using bert encoded user dialogs as features and their slu slots as labels
+
 class BertTracker:
     bc = BertClient(check_version=False)
 
