@@ -1,8 +1,9 @@
+import dataset_walker
 import argparse, json, time, copy
 from collections import defaultdict
 from custom_tracker import CustomTracker
 from bert_tracker import BertTracker
-import dataset_walker
+from learned_tracker import LearnedTracker
 
 
 def labels(user_act, mact):
@@ -379,8 +380,8 @@ def main():
     #     tracker = Tracker()
 
     ontology = json.load(open(args.ontology))
-    tracker = BertTracker(ontology)
-
+    # tracker = BertTracker(ontology)
+    tracker = LearnedTracker(ontology)
     # Iterates over every call in the dataset
     for call in dataset:
 

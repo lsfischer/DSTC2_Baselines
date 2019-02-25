@@ -16,56 +16,104 @@ label_files = []
 
 
 def is_word_in_ontology(word, slot_type="food"):
-    pricerange_options = ontology["informable"]["pricerange"]
-    food_options = ontology["informable"]["food"]
-    area_options = ontology["informable"]["area"]
-
     if slot_type == "food":
-        pass
+        return int(word in ontology["informable"]["food"])
+
     elif slot_type == "area":
-        pass
+        return int(word in ontology["informable"]["area"])
+
     else:
-        pass
+        return int(word in ontology["informable"]["pricerange"])
+
+
+def get_label(word, turn_obj, slot_type="food"):
+    ground_truth_arr = turn_obj["semantics"]["json"]
+
+    for ground_truth_obj in ground_truth_arr:
+        slots_arr = ground_truth_obj["slots"]
+
+        if len(slots_arr) > 0:
+            slot, value = slots_arr[0]
+
+            if slot == slot_type:
+                return int(word == value)
+
+    return 0
 
 
 for root, subdirs, files in os.walk(dataset_path):
     if len(files) != 0:
         label_files.append(f"{root}/label.json")
 
-with open("train_data_food.csv", "w+") as output_file:
+
+def create_trainig_data(output_dict, slot_type, output_file_name):
     for label_file_path in label_files:
         label_file = json.load(open(label_file_path))
 
         for turn in label_file['turns']:
             user_utterance = turn["transcription"]
             tokenized_utterance = word_tokenize(user_utterance)
-            processed_utterance = [word for word in tokenized_utterance if word not in stop]
+            # processed_utterance = [word for word in tokenized_utterance if word not in stop]
 
-            sentence_embedding = np.array(bc.encode([user_utterance]))
-            # word_embeddings = np.array(bc.encode(tokenized_utterance))
+            sentence_embedding = np.array(bc.encode([user_utterance]))[0]
+
             for word in tokenized_utterance:
-                word_embedding = np.array(bc.encode([word]))
-                word_in_ontology = is_word_in_ontology(word, slot_type="food")
 
-            # label = 0
-            #
-            # data = {
-            #     "sentence_embeddings": sentence_embedding,
-            #     "word_embeddings": word_embeddings
-            # }
-            #
-            # pickle.dump(data, open(filename, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
-            # pickle.load()
+                if word == "moderately":
+                    word = "moderate"
 
-        # for turn in label_file["turns"]:
-        #
-        #     user_uterrance = turn["transcription"].replace(',', '')
-        #     labels = []
-        #     for semantic_json in turn["semantics"]["json"]:
-        #         if semantic_json["act"] == "inform":
-        #
-        #             slot, value = semantic_json["slots"][0]
-        #             if slot != "this":
-        #                 labels.append(f"{slot}={value}")
-        #     if labels:
-        #         output_file.write(f"{user_uterrance},{';'.join(labels)}\n")
+                if word == "cheaper":
+                    word = "cheap"
+
+                word_embedding = np.array(bc.encode([word]))[0]
+                word_in_ontology = [is_word_in_ontology(word, slot_type=slot_type)]
+
+                features = np.concatenate((word_embedding, sentence_embedding, word_in_ontology))
+
+                label = get_label(word, turn, slot_type=slot_type)
+
+                output_dict["features"].append(features)
+                output_dict["labels"].append(label)
+
+    pickle.dump(output_dict, open(output_file_name, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
+
+
+# food_data = {
+#     "word_embedding": [],
+#     "sentence_embedding": [],
+#     "word_in_ontology": [],
+#     "label": []
+# }
+
+food_data = {
+    "features": [],
+    "labels": []
+}
+
+# area_data = {
+#     "word_embedding": [],
+#     "sentence_embedding": [],
+#     "word_in_ontology": [],
+#     "label": []
+# }
+
+area_data = {
+    "features": [],
+    "labels": []
+}
+
+# price_data = {
+#     "word_embedding": [],
+#     "sentence_embedding": [],
+#     "word_in_ontology": [],
+#     "label": []
+# }
+
+price_data = {
+    "features": [],
+    "labels": []
+}
+
+create_trainig_data(food_data, "food", "train_data_food_v2")
+create_trainig_data(area_data, "area", "train_data_area_v2")
+create_trainig_data(price_data, "pricerange", "train_data_pricerange_v2")
