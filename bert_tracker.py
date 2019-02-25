@@ -1,7 +1,7 @@
 import copy
 import numpy as np
-import math
 import string
+from abstract_tracker import AbstractTracker
 from bert_serving.client import BertClient
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk import word_tokenize
@@ -9,28 +9,39 @@ from nltk.corpus import stopwords
 from nltk import ngrams
 
 
-class BertTracker:
+class BertTracker(AbstractTracker):
     bc = BertClient(check_version=False)
 
     def __init__(self, ontology):
-        self.reset()
-        self.ontology = ontology
+        """
+        Initializes an instance of this class
+        :param ontology: JSON object containing the ontology of the task
+        """
+        super(BertTracker, self).__init__(ontology)
         self.knowledge_base, self.encoded_kb = self.encode_ontology()
 
-    def reset(self):
-        """Resets hypothesis dictionary to empty value"""
-
-        self.hyps = {"goal-labels": {}, "goal-labels-joint": [], "requested-slots": {}, "method-label": {}}
-
     def addTurn(self, turn):
-        """ Adds a turn to the tracker """
+        """
+        Adds a turn to this tracker
+        :param turn: The turn to process and add
+        :return: A hypothesis of the current state of the dialog
+        """
 
         hyps = copy.deepcopy(self.hyps)
-        best_asr_hyp = turn['input']["live"]['asr-hyps'][0]["asr-hyp"]
-        stop = stopwords.words('english') + list(string.punctuation)
-        tknz = word_tokenize(best_asr_hyp)
-        processed_hyp = [word for word in tknz if word not in stop] + [tup[0] + " " + tup[1] for tup in ngrams(tknz, 2)]
 
+        # Obtaining the best hypothesis from the ASR module
+        best_asr_hyp = turn['input']["live"]['asr-hyps'][0]["asr-hyp"]
+
+        # English stopwords set with punctuation
+        stop = stopwords.words('english') + list(string.punctuation)
+
+        # Tokenize the best hypothesis on the whitespaces
+        tkns = word_tokenize(best_asr_hyp)
+
+        # Remove stop words and also shingle the tokens
+        processed_hyp = [word for word in tkns if word not in stop] + [tup[0] + " " + tup[1] for tup in ngrams(tkns, 2)]
+
+        # Manually change from "moderatly"/"affordable" to "moderate" and "cheaper" to "cheap"
         for idx, word in enumerate(processed_hyp):
             if word == "moderately" or word == "affordable":
                 processed_hyp[idx] = "moderate"
@@ -39,45 +50,38 @@ class BertTracker:
 
         if processed_hyp:
 
+            # Obtain the ontology information
             pricerange_options = self.ontology["informable"]["pricerange"]
             food_options = self.ontology["informable"]["food"]
             area_options = self.ontology["informable"]["area"]
 
-            slots_to_fill = []
+            state_updated = False
+
+            # SIMPLE Matching
+            # Iterate through all the words in the best asr hypothesis
+            # If the word is present in the ontology update that slot with the word
             for hyp_word in processed_hyp:
 
                 if hyp_word in food_options:
-                    slots_to_fill.append((hyp_word, "food"))
+                    hyps["goal-labels"]["food"] = {
+                        hyp_word: 1.0
+                    }
+                    state_updated = True
 
                 if hyp_word in area_options:
-                    slots_to_fill.append((hyp_word, "area"))
+                    hyps["goal-labels"]["area"] = {
+                        hyp_word: 1.0
+                    }
+                    state_updated = True
 
                 if hyp_word in pricerange_options:
-                    slots_to_fill.append((hyp_word, "pricerange"))
-
-            if len(slots_to_fill) != 0:
-                # If a simple  matching was able to find some results
-                food_slots = [tup[0] for tup in slots_to_fill if tup[1] == "food"]
-                area_slots = [tup[0] for tup in slots_to_fill if tup[1] == "area"]
-                pricerange_slots = [tup[0] for tup in slots_to_fill if tup[1] == "pricerange"]
-
-                if food_slots:
-                    hyps["goal-labels"]["food"] = {
-                        food_slots[-1]: 1.0
-                    }
-
-                if area_slots:
-                    hyps["goal-labels"]["area"] = {
-                        area_slots[-1]: 1.0
-                    }
-
-                if pricerange_slots:
                     hyps["goal-labels"]["pricerange"] = {
-                        pricerange_slots[-1]: 1.0
+                        hyp_word: 1.0
                     }
+                    state_updated = True
 
-            else:
-                # When simple matching does not find anything, try using bert to infer different lexical forms
+            # If this simple matching was not able to match anything then we will use BERT w/ cosine-similarity
+            if not state_updated:
                 encoded_hyp = np.array(BertTracker.bc.encode(processed_hyp))
 
                 cosine_sim = cosine_similarity(encoded_hyp, self.encoded_kb)
@@ -129,16 +133,6 @@ class BertTracker:
         pricerange_options = ontology["informable"]["pricerange"]
         food_options = ontology["informable"]["food"]
         area_options = ontology["informable"]["area"]
-
-        # food_area = [food + "," + area + "," for food in food_options for area in area_options]
-        # food_price = [food + ",," + price for food in food_options for price in pricerange_options]
-        # area_price = ["," + area + "," + price for area in area_options for price in pricerange_options]
-
-        # food_area_price = [f_a + price for f_a in food_area for price in pricerange_options]
-        #
-        # knowledge_base = [food + ",," for food in food_options] + ["," + area + "," for area in area_options] + \
-        #                  [",," + price for price in pricerange_options] + \
-        #                  food_area + food_price + area_price + food_area_price
 
         knowledge_base = food_options + area_options + pricerange_options
 
