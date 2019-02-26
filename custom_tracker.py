@@ -1,28 +1,37 @@
 import copy
+from abstract_tracker import AbstractTracker
 
 
-class CustomTracker:
+class CustomTracker(AbstractTracker):
 
     def __init__(self, ontology):
-        self.reset()
-        self.ontology = ontology
-
-    def reset(self):
-        """Resets hypothesis dictionary to empty value"""
-
-        self.hyps = {"goal-labels": {}, "goal-labels-joint": [], "requested-slots": {}, "method-label": {}}
+        """
+        Initializes an instance of this class
+        :param ontology: JSON object containing the ontology of the task
+        """
+        super(CustomTracker, self).__init__(ontology)
 
     def addTurn(self, turn):
-        """ Adds a turn to the tracker """
+        """
+        Adds a turn to this tracker
+        :param turn: The turn to process and add
+        :return: A hypothesis of the current state of the dialog
+        """
 
         hyps = copy.deepcopy(self.hyps)
 
+        # Obtaining the best hypothesis from the ASR module
         best_asr_hyp = turn['input']["live"]['asr-hyps'][0]["asr-hyp"]
 
+        # Obtain the ontology information
         pricerange_options = self.ontology["informable"]["pricerange"]
         food_options = self.ontology["informable"]["food"]
         area_options = self.ontology["informable"]["area"]
 
+        # SIMPLE Matching
+        # Iterate through all the words in ontology
+        # If the word is present in the user utterance update that slot with the word
+        # May fail if a word in the ontology partially matches a substring of the user utterance
         for price_opt in pricerange_options:
             if price_opt in best_asr_hyp:
                 hyps["goal-labels"]["pricerange"] = {
@@ -44,20 +53,7 @@ class CustomTracker:
                 }
                 break
 
-        informed_slots = list(hyps["goal-labels"].keys())
+        super(CustomTracker, self).fill_joint_goals(hyps)
 
-        for inf_slot in informed_slots:
-            if len(hyps["goal-labels-joint"]) > 0:
-                hyps["goal-labels-joint"][0]["slots"][inf_slot] = list(hyps["goal-labels"][inf_slot].keys())[0]
-            else:
-                obj = {
-                    "slots": {
-                        inf_slot: list(hyps["goal-labels"][inf_slot].keys())[0]
-                    },
-                    "score": 1.0
-                }
-                hyps["goal-labels-joint"].append(obj)
-
-        # print("{}\n{}\n".format(best_asr_hyp, self.hyps["goal-labels"]))
         self.hyps = hyps
         return self.hyps

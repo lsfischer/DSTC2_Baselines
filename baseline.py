@@ -380,8 +380,8 @@ def main():
     #     tracker = Tracker()
 
     ontology = json.load(open(args.ontology))
-    # tracker = BertTracker(ontology)
-    tracker = LearnedTracker(ontology)
+    tracker = BertTracker(ontology)
+    # tracker = LearnedTracker(ontology)
     # Iterates over every call in the dataset
     for call in dataset:
 

@@ -10,7 +10,6 @@ from nltk import ngrams
 
 
 class BertTracker(AbstractTracker):
-    bc = BertClient(check_version=False)
 
     def __init__(self, ontology):
         """
@@ -18,6 +17,7 @@ class BertTracker(AbstractTracker):
         :param ontology: JSON object containing the ontology of the task
         """
         super(BertTracker, self).__init__(ontology)
+        self.bc = BertClient(check_version=False)  # Create a BERT client instance
         self.knowledge_base, self.encoded_kb = self.encode_ontology()
 
     def addTurn(self, turn):
@@ -41,7 +41,7 @@ class BertTracker(AbstractTracker):
         # Remove stop words and also shingle the tokens
         processed_hyp = [word for word in tkns if word not in stop] + [tup[0] + " " + tup[1] for tup in ngrams(tkns, 2)]
 
-        # Manually change from "moderatly"/"affordable" to "moderate" and "cheaper" to "cheap"
+        # Manually change from "moderately"/"affordable" to "moderate" and "cheaper" to "cheap"
         for idx, word in enumerate(processed_hyp):
             if word == "moderately" or word == "affordable":
                 processed_hyp[idx] = "moderate"
@@ -82,15 +82,22 @@ class BertTracker(AbstractTracker):
 
             # If this simple matching was not able to match anything then we will use BERT w/ cosine-similarity
             if not state_updated:
-                encoded_hyp = np.array(BertTracker.bc.encode(processed_hyp))
 
+                # Use BERT to encode all the words in the sentence
+                encoded_hyp = np.array(self.bc.encode(processed_hyp))
+
+                # Use the cosine sim between the previous encoding and the encoded knowledge base
                 cosine_sim = cosine_similarity(encoded_hyp, self.encoded_kb)
 
                 for idx, sub_arr in enumerate(cosine_sim):
+
+                    # For every word in the sentence obtain the word in the KB that maximizes the cosine sim
                     argmax_index = np.argmax(sub_arr)
 
+                    # assuming that if it's lower than 0.97 then it's probably a mistake
+                    # (Not many cases have 0.97 cosine sim, maybe none actually)
                     if sub_arr[argmax_index] >= 0.97:
-                        # assuming that if it's lower than 0.97 then it's probably a mistake
+
                         kb_word = self.knowledge_base[argmax_index]
                         print(f"BERT: Word in query: {processed_hyp[idx]} \t matched with {kb_word}")
 
@@ -109,18 +116,7 @@ class BertTracker(AbstractTracker):
                                 kb_word: 1.0
                             }
 
-            informed_slots = list(hyps["goal-labels"].keys())
-            for inf_slot in informed_slots:
-                if len(hyps["goal-labels-joint"]) > 0:
-                    hyps["goal-labels-joint"][0]["slots"][inf_slot] = list(hyps["goal-labels"][inf_slot].keys())[0]
-                else:
-                    obj = {
-                        "slots": {
-                            inf_slot: list(hyps["goal-labels"][inf_slot].keys())[0]
-                        },
-                        "score": 1.0
-                    }
-                    hyps["goal-labels-joint"].append(obj)
+            super(BertTracker, self).fill_joint_goals(hyps)
 
         self.hyps = hyps
         return self.hyps
@@ -136,4 +132,4 @@ class BertTracker(AbstractTracker):
 
         knowledge_base = food_options + area_options + pricerange_options
 
-        return knowledge_base, np.array(BertTracker.bc.encode(knowledge_base))
+        return knowledge_base, np.array(self.bc.encode(knowledge_base))
