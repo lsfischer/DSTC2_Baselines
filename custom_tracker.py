@@ -1,5 +1,6 @@
 import copy
 from abstract_tracker import AbstractTracker
+from collections import defaultdict
 
 
 class CustomTracker(AbstractTracker):
@@ -20,6 +21,8 @@ class CustomTracker(AbstractTracker):
 
         hyps = copy.deepcopy(self.hyps)
 
+        goal_stats = defaultdict(lambda: defaultdict(float))
+
         # Obtaining the best hypothesis from the ASR module
         best_asr_hyp = turn['input']["live"]['asr-hyps'][0]["asr-hyp"]
 
@@ -34,25 +37,29 @@ class CustomTracker(AbstractTracker):
         # May fail if a word in the ontology partially matches a substring of the user utterance
         for price_opt in pricerange_options:
             if price_opt in best_asr_hyp:
-                hyps["goal-labels"]["pricerange"] = {
-                    price_opt: 1.0
-                }
-                break
+                goal_stats["pricerange"][price_opt] += 1.0
+                # hyps["goal-labels"]["pricerange"] = {
+                #     price_opt: 1.0
+                # }
+                # break
 
         for food_opt in food_options:
             if food_opt in best_asr_hyp:
-                hyps["goal-labels"]["food"] = {
-                    food_opt: 1.0
-                }
-                break
+                goal_stats["food"][food_opt] += 1.0
+                # hyps["goal-labels"]["food"] = {
+                #     food_opt: 1.0
+                # }
+                # break
 
         for area_opt in area_options:
             if area_opt in best_asr_hyp:
-                hyps["goal-labels"]["area"] = {
-                    area_opt: 1.0
-                }
-                break
+                goal_stats["area"][area_opt] += 1.0
+                # hyps["goal-labels"]["area"] = {
+                #     area_opt: 1.0
+                # }
+                # break
 
+        super(CustomTracker, self).fill_goal_labels(goal_stats, hyps)
         super(CustomTracker, self).fill_joint_goals(hyps)
 
         self.hyps = hyps

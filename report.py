@@ -21,11 +21,10 @@ def main(argv):
                         help='File to read with CSV scoring data')
     args = parser.parse_args()
 
-    csvfile = open(args.csv)
     #  "state_component, stat, schedule, label_scheme, N, result"
     header = True
     tables = {}
-    for state_component in ["goal.joint", "requested.all", "method"]:
+    for state_component in ["goal.joint"]:  # ["goal.joint", "requested.all", "method"]:
         tables[state_component] = {}
         for evaluation_scheme in EVALUATION_SCHEMES.values():
             tables[state_component][evaluation_scheme] = {}
@@ -51,7 +50,7 @@ def main(argv):
             if state_component in tables.keys():
                 tables[state_component][EVALUATION_SCHEMES[(schedule, label_scheme)]][stat] = result
 
-    for state_component in ["goal.joint", "method", "requested.all"]:
+    for state_component in ["goal.joint"]:  # ["goal.joint", "method", "requested.all"]:
         print(state_component.center(50))
         evaluation_schemes = [key for key in tables[state_component].keys() if len(tables[state_component][key]) > 0]
         evaluation_schemes.sort()
@@ -66,12 +65,12 @@ def main(argv):
 
     print('                                    featured metrics')
     print_row(["", "Joint Goals", "Requested", "Method"], header=True)
-    print_row(["Accuracy", tables["goal.joint"]["eval_2a"]["acc"], tables["requested.all"]["eval_2a"]["acc"],
-               tables["method"]["eval_2a"]["acc"]])
-    print_row(["l2", tables["goal.joint"]["eval_2a"]["l2"], tables["requested.all"]["eval_2a"]["l2"],
-               tables["method"]["eval_2a"]["l2"]])
-    print_row(["roc.v2_ca05", tables["goal.joint"]["eval_2a"]["roc.v2_ca05"],
-               tables["requested.all"]["eval_2a"]["roc.v2_ca05"], tables["method"]["eval_2a"]["roc.v2_ca05"]])
+    print_row(["Accuracy", tables["goal.joint"]["eval_2a"]["acc"]])  # , tables["requested.all"]["eval_2a"]["acc"],
+    # tables["method"]["eval_2a"]["acc"]])
+    # print_row(["l2", tables["goal.joint"]["eval_2a"]["l2"]])  # , tables["requested.all"]["eval_2a"]["l2"],
+    # tables["method"]["eval_2a"]["l2"]])
+    # print_row(["roc.v2_ca05", tables["goal.joint"]["eval_2a"]["roc.v2_ca05"]])  # ,
+    # tables["requested.all"]["eval_2a"]["roc.v2_ca05"], tables["method"]["eval_2a"]["roc.v2_ca05"]])
 
     print("\n\n")
 
@@ -79,7 +78,7 @@ def main(argv):
     print('-----------------------------------------------------------------------------------')
     for k in sorted(basic_stats.keys()):
         v = basic_stats[k]
-        print('%20s : %s' % (k, v))
+    print('%20s : %s' % (k, v))
 
 
 def print_row(row, header=False):

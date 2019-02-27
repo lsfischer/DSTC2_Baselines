@@ -345,9 +345,8 @@ def main():
                         help='Use focus node tracker')
     parser.add_argument('--config', dest='config', action='store', required=True, metavar='TRUE/FALSE',
                         help='The path of the config folder containing the .flist files')
-    parser.add_argument('--customtracker', dest='customtracker', action='store', nargs='?', default="True",
-                        const="True",
-                        help='Use custom tracker')
+    parser.add_argument('--tracker', dest='tracker', action='store', nargs='?', default="LearnedTracker",
+                        help='Tracker to use')
     parser.add_argument('--ontology', dest='ontology', action='store', metavar='JSON_FILE', required=True,
                         help='The ontology to use')
 
@@ -363,25 +362,25 @@ def main():
 
     start_time = time.time()
 
-    # Choosing what kind of tracker to have
-    # if args.focus.lower() == "true":
-    #     tracker = FocusTracker()
-    #
-    # elif args.focus.lower() == "false":
-    #     tracker = Tracker()
-    #
-    # else:
-    #     raise RuntimeError('Dont recognize focus=%s (must be True or False)' % (args.focus))
+    # Choosing what kind of tracker to use
+    if args.tracker.lower() == "tracker":
+        tracker = Tracker()
 
-    # if args.customtracker.lower() == "true":
-    #     ontology = json.load(open(args.ontology))
-    #     tracker = CustomTracker(ontology)
-    # else:
-    #     tracker = Tracker()
+    elif args.tracker.lower() == "focustracker":
+        tracker = FocusTracker()
 
-    ontology = json.load(open(args.ontology))
-    tracker = BertTracker(ontology)
-    # tracker = LearnedTracker(ontology)
+    elif args.tracker.lower() == "customtracker":
+        ontology = json.load(open(args.ontology))
+        tracker = CustomTracker(ontology)
+
+    elif args.tracker.lower() == "berttracker":
+        ontology = json.load(open(args.ontology))
+        tracker = BertTracker(ontology)
+
+    elif args.tracker.lower() == "learnedtracker":
+        ontology = json.load(open(args.ontology))
+        tracker = LearnedTracker(ontology)
+
     # Iterates over every call in the dataset
     for call in dataset:
 

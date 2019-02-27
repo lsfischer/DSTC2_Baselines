@@ -8,6 +8,7 @@ from nltk.corpus import stopwords
 from bert_serving.client import BertClient
 from sklearn.model_selection import StratifiedKFold
 from abstract_tracker import AbstractTracker
+from collections import defaultdict
 
 
 class LearnedTracker(AbstractTracker):
@@ -79,19 +80,17 @@ class LearnedTracker(AbstractTracker):
 
         print("training food")
         best_food_c = 131.0  # self.train_aux(food_training_data)
+        food_classifier = svm.SVC(kernel="rbf", C=best_food_c, gamma="auto")
+        food_classifier.fit(np.array(food_training_data["features"]), np.array(food_training_data["labels"]))
 
         print("training area")
         best_area_c = 51.0  # self.train_aux(area_training_data)
+        area_classifier = svm.SVC(kernel="rbf", C=best_area_c, gamma="auto")
+        area_classifier.fit(np.array(area_training_data["features"]), np.array(area_training_data["labels"]))
 
         print("training price")
         best_price_c = 1.0  # self.train_aux(price_training_data)
-
-        food_classifier = svm.SVC(kernel="rbf", C=best_food_c, gamma="auto")
-        area_classifier = svm.SVC(kernel="rbf", C=best_area_c, gamma="auto")
         price_classifier = svm.SVC(kernel="rbf", C=best_price_c, gamma="auto")
-
-        food_classifier.fit(np.array(food_training_data["features"]), np.array(food_training_data["labels"]))
-        area_classifier.fit(np.array(area_training_data["features"]), np.array(area_training_data["labels"]))
         price_classifier.fit(np.array(price_training_data["features"]), np.array(price_training_data["labels"]))
 
         return food_classifier, area_classifier, price_classifier
@@ -104,6 +103,8 @@ class LearnedTracker(AbstractTracker):
         """
 
         hyps = copy.deepcopy(self.hyps)
+
+        goal_stats = defaultdict(lambda: defaultdict(float))
 
         # Obtaining the best hypothesis from the ASR module
         best_asr_hyp = turn['input']["live"]['asr-hyps'][0]["asr-hyp"]
@@ -146,27 +147,28 @@ class LearnedTracker(AbstractTracker):
                 area_features = np.concatenate((word_embedding, sentence_embedding, word_in_area_ontology))
                 price_features = np.concatenate((word_embedding, sentence_embedding, word_in_price_ontology))
 
-                # Predict whether the current word should update one (or more) of the slot types
+                # Predict the probability associated with each class
+                # food_proba = self.food_classifier.predict_proba([food_features])[0]
+                # area_proba = self.area_classifier.predict_proba([area_features])[0]
+                # price_proba = self.price_classifier.predict_proba([price_features])[0]
+
+                # Decide whether the current word should update one (or more) of the slot types
                 update_food_slot = self.food_classifier.predict([food_features])[0]
                 update_area_slot = self.area_classifier.predict([area_features])[0]
                 update_price_slot = self.price_classifier.predict([price_features])[0]
 
                 if update_food_slot:
-                    hyps["goal-labels"]["food"] = {
-                        word: 1.0  # Change for some other value
-                    }
+                    goal_stats["food"][word] += 1.0
 
                 if update_area_slot:
-                    hyps["goal-labels"]["area"] = {
-                        word: 1.0  # Change for some other value
-                    }
+                    goal_stats["area"][word] += 1.0
 
                 if update_price_slot:
-                    hyps["goal-labels"]["pricerange"] = {
-                        word: 1.0  # Change for some other value
-                    }
+                    goal_stats["pricerange"][word] += 1.0
 
-            super(LearnedTracker, self).fill_joint_goals(hyps)
+        # pick top values for each slot
+        super(LearnedTracker, self).fill_goal_labels(goal_stats, hyps)
+        super(LearnedTracker, self).fill_joint_goals(hyps)
 
         self.hyps = hyps
         return self.hyps

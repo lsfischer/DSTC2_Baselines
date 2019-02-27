@@ -4,6 +4,7 @@ import string
 from abstract_tracker import AbstractTracker
 from bert_serving.client import BertClient
 from sklearn.metrics.pairwise import cosine_similarity
+from collections import defaultdict
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk import ngrams
@@ -28,6 +29,8 @@ class BertTracker(AbstractTracker):
         """
 
         hyps = copy.deepcopy(self.hyps)
+
+        goal_stats = defaultdict(lambda: defaultdict(float))
 
         # Obtaining the best hypothesis from the ASR module
         best_asr_hyp = turn['input']["live"]['asr-hyps'][0]["asr-hyp"]
@@ -60,24 +63,19 @@ class BertTracker(AbstractTracker):
             # SIMPLE Matching
             # Iterate through all the words in the best asr hypothesis
             # If the word is present in the ontology update that slot with the word
+
             for hyp_word in processed_hyp:
 
                 if hyp_word in food_options:
-                    hyps["goal-labels"]["food"] = {
-                        hyp_word: 1.0
-                    }
+                    goal_stats["food"][hyp_word] += 1.0
                     state_updated = True
 
                 if hyp_word in area_options:
-                    hyps["goal-labels"]["area"] = {
-                        hyp_word: 1.0
-                    }
+                    goal_stats["area"][hyp_word] += 1.0
                     state_updated = True
 
                 if hyp_word in pricerange_options:
-                    hyps["goal-labels"]["pricerange"] = {
-                        hyp_word: 1.0
-                    }
+                    goal_stats["pricerange"][hyp_word] += 1.0
                     state_updated = True
 
             # If this simple matching was not able to match anything then we will use BERT w/ cosine-similarity
@@ -102,20 +100,15 @@ class BertTracker(AbstractTracker):
                         print(f"BERT: Word in query: {processed_hyp[idx]} \t matched with {kb_word}")
 
                         if kb_word in food_options:
-                            hyps["goal-labels"]["food"] = {
-                                kb_word: 1.0
-                            }
+                            goal_stats["food"][kb_word] += 1.0
 
                         if kb_word in area_options:
-                            hyps["goal-labels"]["area"] = {
-                                kb_word: 1.0
-                            }
+                            goal_stats["area"][kb_word] += 1.0
 
                         if kb_word in pricerange_options:
-                            hyps["goal-labels"]["pricerange"] = {
-                                kb_word: 1.0
-                            }
+                            goal_stats["pricerange"][kb_word] += 1.0
 
+            super(BertTracker, self).fill_goal_labels(goal_stats, hyps)
             super(BertTracker, self).fill_joint_goals(hyps)
 
         self.hyps = hyps
