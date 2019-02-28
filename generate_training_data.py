@@ -87,7 +87,7 @@ def create_trainig_data(slot_type, output_file_name):
         for turn in label_file['turns']:
 
             user_utterance = turn["transcription"]
-            tokenized_utterance = word_tokenize(user_utterance)
+            tokenized_utterance = word_tokenize(user_utterance) + ["dontcare"]
             # processed_utterance = [word for word in tokenized_utterance if word not in stop]
 
             # Create an embedding representation of the entire user utterance, using BERT, to use as a feature

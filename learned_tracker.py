@@ -3,6 +3,7 @@ import string
 import copy
 import numpy as np
 from sklearn import svm
+from sklearn.svm import LinearSVC, SVC
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 from bert_serving.client import BertClient
@@ -58,7 +59,7 @@ class LearnedTracker(AbstractTracker):
                 y_training_set = data_object["labels"][train_idx]
                 y_validation_set = data_object["labels"][valid_idx]
 
-                model = svm.SVC(kernel='rbf', C=c, gamma="auto")
+                model = LinearSVC(C=c, class_weight="balanced", max_iter=10000000)
                 model.fit(x_training_set, y_training_set)
                 training_error = 1 - model.score(x_training_set, y_training_set)
                 validation_error = 1 - model.score(x_validation_set, y_validation_set)
@@ -79,19 +80,21 @@ class LearnedTracker(AbstractTracker):
         price_training_data = pickle.load(open("train_data_pricerange_v2", "rb"))
 
         print("training food")
-        best_food_c = 131.0  # self.train_aux(food_training_data)
-        food_classifier = svm.SVC(kernel="rbf", C=best_food_c, gamma="auto")
-        food_classifier.fit(np.array(food_training_data["features"]), np.array(food_training_data["labels"]))
+        best_food_c = self.train_aux(food_training_data)  # 131.0
+        # food_classifier = LinearSVC(C=best_food_c, class_weight="balanced")
+        # food_classifier.fit(np.array(food_training_data["features"]), np.array(food_training_data["labels"]))
 
         print("training area")
-        best_area_c = 51.0  # self.train_aux(area_training_data)
-        area_classifier = svm.SVC(kernel="rbf", C=best_area_c, gamma="auto")
-        area_classifier.fit(np.array(area_training_data["features"]), np.array(area_training_data["labels"]))
+        best_area_c = self.train_aux(area_training_data)  # 51.0
+        # area_classifier = LinearSVC(C=best_area_c, class_weight="balanced")
+        # area_classifier.fit(np.array(area_training_data["features"]), np.array(area_training_data["labels"]))
 
         print("training price")
-        best_price_c = 1.0  # self.train_aux(price_training_data)
-        price_classifier = svm.SVC(kernel="rbf", C=best_price_c, gamma="auto")
-        price_classifier.fit(np.array(price_training_data["features"]), np.array(price_training_data["labels"]))
+        best_price_c = self.train_aux(price_training_data)  # 1.0
+        # price_classifier = LinearSVC(C=best_price_c, class_weight="balanced")
+        # price_classifier.fit(np.array(price_training_data["features"]), np.array(price_training_data["labels"]))
+        print(best_food_c, best_area_c, best_price_c)
+        raise Exception
 
         return food_classifier, area_classifier, price_classifier
 
