@@ -1,7 +1,7 @@
 import copy
 import numpy as np
 import string
-from abstract_tracker import AbstractTracker
+from trackers.abstract_tracker import AbstractTracker
 from bert_serving.client import BertClient
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import defaultdict

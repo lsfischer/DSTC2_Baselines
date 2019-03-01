@@ -1,5 +1,5 @@
 import copy
-from abstract_tracker import AbstractTracker
+from trackers.abstract_tracker import AbstractTracker
 from collections import defaultdict
 
 

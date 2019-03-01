@@ -1,9 +1,10 @@
 import dataset_walker
 import argparse, json, time, copy
 from collections import defaultdict
-from custom_tracker import CustomTracker
-from bert_tracker import BertTracker
-from learned_tracker import LearnedTracker
+from trackers.bert_tracker import BertTracker
+from trackers.custom_tracker import CustomTracker
+from trackers.bandit_tracker import BanditTracker
+from trackers.learned_tracker import LearnedTracker
 
 
 def labels(user_act, mact):
@@ -380,6 +381,10 @@ def main():
     elif args.tracker.lower() == "learnedtracker":
         ontology = json.load(open(args.ontology))
         tracker = LearnedTracker(ontology)
+
+    elif args.tracker.lower() == "bandittracker":
+        ontology = json.load(open(args.ontology))
+        tracker = BanditTracker(ontology)
 
     # Iterates over every call in the dataset
     for call in dataset:

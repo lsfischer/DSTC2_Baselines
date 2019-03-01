@@ -2,14 +2,13 @@ import pickle
 import string
 import copy
 import numpy as np
-from sklearn import svm
-from sklearn.svm import LinearSVC, SVC
 from nltk import word_tokenize
 from nltk.corpus import stopwords
+from sklearn.svm import LinearSVC
+from collections import defaultdict
 from bert_serving.client import BertClient
 from sklearn.model_selection import StratifiedKFold
-from abstract_tracker import AbstractTracker
-from collections import defaultdict
+from trackers.abstract_tracker import AbstractTracker
 
 
 class LearnedTracker(AbstractTracker):
@@ -75,9 +74,9 @@ class LearnedTracker(AbstractTracker):
         return cross_err_matrix[index_line_of_best_val, 0]
 
     def train(self):
-        food_training_data = pickle.load(open("train_data_food_v2", "rb"))
-        area_training_data = pickle.load(open("train_data_area_v2", "rb"))
-        price_training_data = pickle.load(open("train_data_pricerange_v2", "rb"))
+        food_training_data = pickle.load(open("../training_data/train_data_food_v2", "rb"))
+        area_training_data = pickle.load(open("../training_data/train_data_area_v2", "rb"))
+        price_training_data = pickle.load(open("../training_data/train_data_pricerange_v2", "rb"))
 
         print("training food")
         best_food_c = self.train_aux(food_training_data)  # 131.0
