@@ -106,10 +106,10 @@ def create_trainig_data(slot_type, output_file_name):
                 word_embedding = np.array(bc.encode([word]))[0]
 
                 # Checks if the current word being iterated is present in the ontology, used as a feature
-                word_in_ontology = [is_word_in_ontology(word, slot_type=slot_type)]
+                # word_in_ontology = [is_word_in_ontology(word, slot_type=slot_type)]
 
                 # concatenate all the features together in a vector of size 2049
-                features = np.concatenate((word_embedding, sentence_embedding, word_in_ontology))
+                features = np.concatenate((word_embedding, sentence_embedding))  # , word_in_ontology))
 
                 # Get the label associated with these features
                 label = get_label(word, turn, slot_type=slot_type)
@@ -120,7 +120,6 @@ def create_trainig_data(slot_type, output_file_name):
     # Serialize training data dictionary
     pickle.dump(output_dict, open(output_file_name, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
-
-create_trainig_data("food", "train_data_food_v2")
-create_trainig_data("area", "train_data_area_v2")
-create_trainig_data("pricerange", "train_data_pricerange_v2")
+create_trainig_data("food", "train_data_food_no_ontology")
+create_trainig_data("area", "train_data_area_no_ontology")
+create_trainig_data("pricerange", "train_data_pricerange_no_ontology")

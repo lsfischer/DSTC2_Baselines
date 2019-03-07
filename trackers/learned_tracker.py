@@ -1,10 +1,10 @@
+import copy
 import pickle
 import string
-import copy
 import numpy as np
 from nltk import word_tokenize
 from nltk.corpus import stopwords
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC, SVC
 from collections import defaultdict
 from bert_serving.client import BertClient
 from sklearn.model_selection import StratifiedKFold
@@ -79,21 +79,19 @@ class LearnedTracker(AbstractTracker):
         price_training_data = pickle.load(open("../training_data/train_data_pricerange_v2", "rb"))
 
         print("training food")
-        best_food_c = self.train_aux(food_training_data)  # 131.0
-        # food_classifier = LinearSVC(C=best_food_c, class_weight="balanced")
-        # food_classifier.fit(np.array(food_training_data["features"]), np.array(food_training_data["labels"]))
+        best_food_c = 131.0  # self.train_aux(food_training_data)  # 131.0
+        food_classifier = SVC(C=best_food_c, class_weight="balanced")
+        food_classifier.fit(np.array(food_training_data["features"]), np.array(food_training_data["labels"]))
 
         print("training area")
-        best_area_c = self.train_aux(area_training_data)  # 51.0
-        # area_classifier = LinearSVC(C=best_area_c, class_weight="balanced")
-        # area_classifier.fit(np.array(area_training_data["features"]), np.array(area_training_data["labels"]))
+        best_area_c = 51.0  # self.train_aux(area_training_data)  # 51.0
+        area_classifier = SVC(C=best_area_c, class_weight="balanced")
+        area_classifier.fit(np.array(area_training_data["features"]), np.array(area_training_data["labels"]))
 
         print("training price")
-        best_price_c = self.train_aux(price_training_data)  # 1.0
-        # price_classifier = LinearSVC(C=best_price_c, class_weight="balanced")
-        # price_classifier.fit(np.array(price_training_data["features"]), np.array(price_training_data["labels"]))
-        print(best_food_c, best_area_c, best_price_c)
-        raise Exception
+        best_price_c = 1.0  # self.train_aux(price_training_data)  # 1.0
+        price_classifier = SVC(C=best_price_c, class_weight="balanced")
+        price_classifier.fit(np.array(price_training_data["features"]), np.array(price_training_data["labels"]))
 
         return food_classifier, area_classifier, price_classifier
 
