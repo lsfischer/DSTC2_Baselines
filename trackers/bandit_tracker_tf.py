@@ -68,19 +68,21 @@ class BanditTrackerTF(AbstractTracker):
     def get_dataset(self, data_object):
         # convert to np_array
         data_object["features"] = normalize(np.array(data_object["features"]), norm="l1")[:10000, :]
-        # data_object["labels"] = np.array(data_object["labels"])
+        data_object["labels"] = np.array(data_object["labels"])[:10000, :]
+
+        rewards = np.array([(0, 1) if label else (1, 0) for label in data_object["labels"]])
+        # TODO check rewards shape
 
         num_actions = 2  # Actions are : Update state, Do Not Update state
         context_dim = 2049
-        noise_stds = [0.01 * (i + 1) for i in range(num_actions)]
+        # noise_stds = [0.01 * (i + 1) for i in range(num_actions)]
 
         betas = np.random.uniform(-1, 1, (context_dim, num_actions))
         betas /= np.linalg.norm(betas, axis=0)
 
-        # rewards = np.dot(data_object["features"], betas)
-        rewards = np.random.randint(2, size=(59681, 2))
+        # rewards = np.random.randint(2, size=(10000, 2))
         opt_actions = np.argmax(rewards, axis=1)
-        # rewards += np.random.normal(scale=noise_stds, size=rewards.shape)
+
         opt_rewards = np.array([rewards[i, act] for i, act in enumerate(opt_actions)])
         return np.hstack((data_object["features"], rewards)), opt_rewards, opt_actions, num_actions, context_dim
 
@@ -109,7 +111,7 @@ class BanditTrackerTF(AbstractTracker):
         # Training area bandit classifier
 
         print("Training area")
-        for i in range(self.area_dataset.shape[0]):
+        for i in tqdm(range(self.area_dataset.shape[0])):
             context = area_bandit.context(i)
             action = self.area_algo.action(context)
             reward = area_bandit.reward(i, action)
@@ -124,7 +126,7 @@ class BanditTrackerTF(AbstractTracker):
         # Training price bandit classifier
 
         print("Training price")
-        for i in range(self.price_dataset.shape[0]):
+        for i in tqdm(range(self.price_dataset.shape[0])):
             context = price_bandit.context(i)
             action = self.price_algo.action(context)
             reward = price_bandit.reward(i, action)
