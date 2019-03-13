@@ -1,16 +1,17 @@
+import os
 import copy
-from trackers.abstract_tracker import AbstractTracker
 from collections import defaultdict
+from trackers.abstract_tracker import AbstractTracker
 
 
-class CustomTracker(AbstractTracker):
+class SimpleTracker(AbstractTracker):
 
     def __init__(self, ontology):
         """
         Initializes an instance of this class
         :param ontology: JSON object containing the ontology of the task
         """
-        super(CustomTracker, self).__init__(ontology)
+        super(SimpleTracker, self).__init__(ontology)
 
     def addTurn(self, turn):
         """
@@ -38,17 +39,29 @@ class CustomTracker(AbstractTracker):
         for price_opt in pricerange_options:
             if price_opt in best_asr_hyp:
                 goal_stats["pricerange"][price_opt] += 1.0
+                # hyps["goal-labels"]["pricerange"] = {
+                #     price_opt: 1.0
+                # }
+                # break
 
         for food_opt in food_options:
             if food_opt in best_asr_hyp:
                 goal_stats["food"][food_opt] += 1.0
+                # hyps["goal-labels"]["food"] = {
+                #     food_opt: 1.0
+                # }
+                # break
 
         for area_opt in area_options:
             if area_opt in best_asr_hyp:
                 goal_stats["area"][area_opt] += 1.0
+                # hyps["goal-labels"]["area"] = {
+                #     area_opt: 1.0
+                # }
+                # break
 
-        super(CustomTracker, self).fill_goal_labels(goal_stats, hyps)
-        super(CustomTracker, self).fill_joint_goals(hyps)
+        super(SimpleTracker, self).fill_goal_labels(goal_stats, hyps)
+        super(SimpleTracker, self).fill_joint_goals(hyps)
 
         self.hyps = hyps
         return self.hyps

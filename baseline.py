@@ -393,7 +393,6 @@ def main():
 
         # Iterates over every call in the dataset
     for call in dataset:
-
         this_session = {"session-id": call.log["session-id"], "turns": []}
         tracker.reset()
 

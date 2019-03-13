@@ -271,12 +271,12 @@ def normalise_dist(dist, this_id=None):
 
     for i in range(len(out)):
         if out[i][1] < 0.0:
-            print('WARNING: Score is less than 0.0, changing to 0.0', context_string, file=sys.stderr)
+            print('WARNING: Score is less than 0.0, changing to 0.0')
 
     total_p = sum([x[1] for x in out])
     if total_p > 1.0:
         if abs(total_p - 1.0) > EPS:
-            print('WARNING: scores sum to more than 1, renormalising', context_string, file=sys.stderr)
+            print('WARNING: scores sum to more than 1, renormalising')
         out = [(x[0], x[1] / total_p) for x in out]
         total_p = 1.0
 

@@ -2,16 +2,17 @@ import copy
 import pickle
 import string
 import numpy as np
+from tqdm import tqdm
 import tensorflow as tf
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 from collections import defaultdict
 from bert_serving.client import BertClient
-from trackers.abstract_tracker import AbstractTracker
-from bandits.algorithms.linear_full_posterior_sampling import LinearFullPosteriorSampling
-from bandits.core.contextual_bandit import ContextualBandit
 from sklearn.preprocessing import normalize
-from tqdm import tqdm
+from trackers.abstract_tracker import AbstractTracker
+from bandits.core.contextual_bandit import ContextualBandit
+from bandits.algorithms.posterior_bnn_sampling import PosteriorBNNSampling
+from bandits.algorithms.linear_full_posterior_sampling import LinearFullPosteriorSampling
 
 
 class BanditTrackerTF(AbstractTracker):
@@ -31,6 +32,28 @@ class BanditTrackerTF(AbstractTracker):
                                                      b0=6,
                                                      lambda_prior=0.25,
                                                      initial_pulls=2)
+
+        hparams_dropout = tf.contrib.training.HParams(num_actions=self.num_actions,
+                                                      context_dim=self.context_dim,
+                                                      init_scale=0.3,
+                                                      activation=tf.nn.relu,
+                                                      layer_sizes=[50],
+                                                      batch_size=512,
+                                                      activate_decay=True,
+                                                      initial_lr=0.1,
+                                                      max_grad_norm=5.0,
+                                                      show_training=False,
+                                                      freq_summary=1000,
+                                                      buffer_s=-1,
+                                                      initial_pulls=2,
+                                                      optimizer='RMS',
+                                                      reset_lr=True,
+                                                      lr_decay_rate=0.5,
+                                                      training_freq=50,
+                                                      training_epochs=100,
+                                                      use_dropout=True,
+                                                      keep_prob=0.80)
+
         self.food_dataset, self.food_opt_rewards, self.food_opt_actions, _, _ = self.get_dataset(
             pickle.load(open("/home/l.fischer/DSTC2_Baselines/training_data/train_data_food_v2", "rb")))
 
@@ -40,11 +63,11 @@ class BanditTrackerTF(AbstractTracker):
         self.price_dataset, self.price_opt_rewards, self.price_opt_actions, _, _ = self.get_dataset(
             pickle.load(open("/home/l.fischer/DSTC2_Baselines/training_data/train_data_pricerange_v2", "rb")))
 
-        self.food_algo = LinearFullPosteriorSampling('LinFullPost', hparams_linear)
+        self.food_algo = PosteriorBNNSampling('Dropout_food', hparams_dropout, 'RMSProp')
 
-        self.area_algo = LinearFullPosteriorSampling('LinFullPost', hparams_linear)
+        self.area_algo = PosteriorBNNSampling('Dropout_area', hparams_dropout, 'RMSProp')
 
-        self.price_algo = LinearFullPosteriorSampling('LinFullPost', hparams_linear)
+        self.price_algo = PosteriorBNNSampling('Dropout_price', hparams_dropout, 'RMSProp')
 
         self.train()
 
@@ -67,11 +90,10 @@ class BanditTrackerTF(AbstractTracker):
 
     def get_dataset(self, data_object):
         # convert to np_array
-        data_object["features"] = normalize(np.array(data_object["features"]), norm="l1")[:10000, :]
-        data_object["labels"] = np.array(data_object["labels"])[:10000, :]
+        data_object["features"] = normalize(np.array(data_object["features"]), norm="l1")
+        data_object["labels"] = np.array(data_object["labels"])
 
         rewards = np.array([(0, 1) if label else (1, 0) for label in data_object["labels"]])
-        # TODO check rewards shape
 
         num_actions = 2  # Actions are : Update state, Do Not Update state
         context_dim = 2049
