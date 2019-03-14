@@ -6,6 +6,7 @@ from trackers.custom_tracker import CustomTracker
 from trackers.bandit_tracker import BanditTracker
 from trackers.learned_tracker import LearnedTracker
 from trackers.bandit_tracker_tf import BanditTrackerTF
+from trackers.simple_tracker import SimpleTracker
 
 
 def labels(user_act, mact):
@@ -391,6 +392,10 @@ def main():
         ontology = json.load(open(args.ontology))
         tracker = BanditTrackerTF(ontology)
 
+    elif args.tracker.lower() == "simpletracker":
+        ontology = json.load(open(args.ontology))
+        tracker = SimpleTracker(ontology)
+
         # Iterates over every call in the dataset
     for call in dataset:
         this_session = {"session-id": call.log["session-id"], "turns": []}
@@ -399,7 +404,7 @@ def main():
         # Iterates over every turn in a call
         for turn, _ in call:
             # Adds the turn to the tracker
-            tracker_turn = tracker.addTurn(turn)
+            tracker_turn = tracker.addTurn(turn, call.log["session-id"])
 
             this_session["turns"].append(tracker_turn)
 

@@ -75,6 +75,6 @@ class AbstractTracker(ABC):
             hyps["goal-labels-joint"] = [goal_joint_label]
 
     @abstractmethod
-    def addTurn(self, turn):
+    def addTurn(self, turn, session_id):
         """ Adds a turn to the tracker """
         raise NotImplementedError
